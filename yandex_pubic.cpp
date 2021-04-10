@@ -21,14 +21,20 @@ using namespace std;
 //	Добавление документов. 
 //	Добавленный документ должен находиться по поисковому запросу, который содержит слова из документа.
 void TestAddDocument() {
-	SearchServer server;
+	const int doc_id[] = { 0, 1 };
+	const string docs[] = { "cat with a red bow"s, "red bow fight"s };
+	const vector<int> doc_ratings[] = { { 3, 6 }, { 1, 7 } };
 
-	server.AddDocument(0, "cat with a red bow"s, DocumentStatus::ACTUAL, { 3, 6 });
-	assert(server.FindTopDocuments("red bow"s).size() == 1);
-	assert(server.FindTopDocuments("red bow"s)[0].id == 0);
-	server.AddDocument(1, "red bow fight"s, DocumentStatus::BANNED, { 1, 7 });
-	assert(server.FindTopDocuments("red bow"s).size() == 1);
-	assert(server.FindTopDocuments("red bow"s)[0].id == 0);
+	SearchServer server;
+	server.AddDocument(doc_id[0], docs[0], DocumentStatus::ACTUAL, doc_ratings[0]);
+	server.AddDocument(doc_id[1], docs[1], DocumentStatus::ACTUAL, doc_ratings[1]);
+	assert(server.FindTopDocuments("cat"s).size() == 1);
+	assert(server.FindTopDocuments("cat"s)[0].id == doc_id[0]);
+	assert(server.FindTopDocuments("fight"s)[0].id != doc_id[0]);
+
+	assert(server.FindTopDocuments("fight"s).size() == 1);
+	assert(server.FindTopDocuments("fight"s)[0].id == doc_id[1]);
+	assert(server.FindTopDocuments("cat"s)[0].id != doc_id[1]);
 }
 
 // Тест проверяет, что поисковая система исключает стоп-слова при добавлении документов
