@@ -112,6 +112,12 @@ void TestMatchWithStopWords() {
 	assert(match2.size() == 1);
 	auto [match3, status3] = server.MatchDocument("cat red -fight"s, doc_id[1]);
 	assert(match3.size() == 0);
+	auto [match4, status4] = server.MatchDocument("red bow"s, doc_id[0]);
+	assert(match4.size() == 0);
+	auto [match5, status5] = server.MatchDocument("bow fight"s, doc_id[1]);
+	assert(match5.size() == 1);
+	auto [match6, status6] = server.MatchDocument("bow -fight"s, doc_id[1]);
+	assert(match6.size() == 0);
 }
 
 //	Сортировка найденных документов по релевантности. 
