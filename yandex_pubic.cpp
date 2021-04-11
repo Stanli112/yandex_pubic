@@ -98,6 +98,22 @@ void TestMatch() {
 	assert(match3.size() == 0);
 }
 
+void TestMatchWithStopWords() {
+	const int doc_id[] = { 0, 1 };
+	const string docs[] = { "cat with a red bow"s, "red bow fight"s };
+	const vector<int> doc_ratings[] = { { 3, 6 }, { 1, 7 } };
+	SearchServer server;
+	server.SetStopWords("a red bow");
+	server.AddDocument(doc_id[0], docs[0], DocumentStatus::ACTUAL, doc_ratings[0]);
+	server.AddDocument(doc_id[1], docs[1], DocumentStatus::ACTUAL, doc_ratings[1]);
+	auto [match, status] = server.MatchDocument("cat red bow"s, doc_id[0]);
+	assert(match.size() == 1);
+	auto [match2, status2] = server.MatchDocument("cat red -fight"s, doc_id[0]);
+	assert(match2.size() == 1);
+	auto [match3, status3] = server.MatchDocument("cat red -fight"s, doc_id[1]);
+	assert(match3.size() == 0);
+}
+
 //	Сортировка найденных документов по релевантности. 
 //	Возвращаемые при поиске документов результаты должны быть отсортированы в порядке убывания релевантности.
 void TestSortByRelevance() {
@@ -251,6 +267,7 @@ void TestSearchServer() {
 	TestAddDocument();
 	TestMinusWords();
 	TestMatch();
+	TestMatchWithStopWords();
 	TestSortByRelevance();
 	TestRating();
 	TestPredicate();
