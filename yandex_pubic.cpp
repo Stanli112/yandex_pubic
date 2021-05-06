@@ -1,288 +1,190 @@
-﻿#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <map>
-#include <set>
-#include <string>
-#include <utility>
-#include <vector>
-#include <cfloat>
-#include <tuple>
-#include <numeric>
+﻿////#include <algorithm>
+////#include <iostream>
+////#include <set>
+////#include <string>
+////#include <vector>
+////
+////using namespace std;
+////
+////template <typename It>
+////void PrintRange(It range_begin, It range_end) {
+////    for (auto it = range_begin; it != range_end; ++it) {
+////        cout << *it << " "s;
+////    }
+////    cout << endl;
+////}
+////
+////template <typename It>
+////auto MakeSet(It range_begin, It range_end) {
+////    return set(range_begin, range_end);
+////}
+////
+////template <typename It>
+////auto MakeVector(It range_begin, It range_end) {
+////    return vector(range_begin, range_end);
+////}
+////
+////template <typename Container>
+////void EraseAndPrint(Container& container, int position, int p1, int p2) {
+////    auto it_to_erased = container.erase(container.begin() + position);
+////    //PrintRange(container.begin(), it_to_erased);
+////    //PrintRange(it_to_erased, container.end());    
+////    PrintRange(container.begin(), container.end());
+////    container.erase(container.begin() + p1, container.begin() + p2);
+////    PrintRange(container.begin(), container.end());
+////}
+////
+////int main() {
+////    vector<string> langs = { "Python"s, "Java"s, "C#"s, "Ruby"s, "C++"s };
+////    //EraseAndPrint(langs, find(langs.begin(), langs.end(), "C++"));
+////    //EraseAndPrint(langs, langs.begin());
+////    //EraseAndPrint(langs, 2);
+////    EraseAndPrint(langs, 0, 0, 2);
+////}
+//
+//
+////#include <iostream>
+////
+////using namespace std;
+////
+////int Fibonacci(int n) {
+////    if (n == 0)
+////        return 0;
+////    if (n == 1)
+////        return 1;
+////    return Fibonacci(n - 1) + Fibonacci(n - 2);
+////}
+////
+////int IsPowOfTwo(int n) {
+////
+////    if (n <= 0)
+////        return 0;
+////    if (n == 1)
+////        return 1;
+////    if (n % 2 == 0) {
+////        return IsPowOfTwo(n / 2);
+////    }
+////    return 0;
+////}
+////
+////int main() {
+////    cout << Fibonacci(6) << endl;
+////
+////    int result = IsPowOfTwo(1024);
+////    cout << result << endl;
+////
+////    return 0;
+////}
+//
+//// Ханойские башни
+//#include <iostream>
+//
+//using namespace std;
+//
+////quantity-число колец, from-начальное положение колец(1-3),to-конечное положение колец(1-3)
+//                              //buf_peg - промежуточный колышек(1-3)
+//void hanoi_towers(int quantity, int from, int to, int buf_peg)  
+//{                               
+//    if (quantity != 0)
+//    {
+//        hanoi_towers(quantity - 1, from, buf_peg, to);
+//
+//        cout << from << " -> " << to << endl;
+//
+//        hanoi_towers(quantity - 1, buf_peg, to, from);
+//    }
+//}
+//
+//int main()
+//{
+//    setlocale(LC_ALL, "rus");
+//    int start_peg = 1, destination_peg = 3, buffer_peg = 2, plate_quantity;
+//    cout << "Номер первого столбика: " << start_peg << endl;
+//    cout << "Номер конечного столбика: " << destination_peg <<endl;
+//    cout << "Номер промежуточного столбика: " << buffer_peg << endl;
+//    cout << "Количество дисков:" << endl;
+//    cin >> plate_quantity;
+//
+//    hanoi_towers(plate_quantity, start_peg, destination_peg, buffer_peg);
+//    return 0;
+//}
 
-using namespace std;
-
-/* Подставьте вашу реализацию класса SearchServer сюда */
-
-
-// -------- Начало модульных тестов поисковой системы ----------
-
-
-//	Добавление документов. 
-//	Добавленный документ должен находиться по поисковому запросу, который содержит слова из документа.
-void TestAddDocument() {
-	const int doc_id[] = { 0, 1 };
-	const string docs[] = { "cat with a red bow"s, "red bow fight"s };
-	const vector<int> doc_ratings[] = { { 3, 6 }, { 1, 7 } };
-
-	SearchServer server;
-	server.AddDocument(doc_id[0], docs[0], DocumentStatus::ACTUAL, doc_ratings[0]);
-	server.AddDocument(doc_id[1], docs[1], DocumentStatus::ACTUAL, doc_ratings[1]);
-	assert(server.FindTopDocuments("cat"s).size() == 1);
-	assert(server.FindTopDocuments("cat"s)[0].id == doc_id[0]);
-	assert(server.FindTopDocuments("fight"s)[0].id != doc_id[0]);
-
-	assert(server.FindTopDocuments("fight"s).size() == 1);
-	assert(server.FindTopDocuments("fight"s)[0].id == doc_id[1]);
-	assert(server.FindTopDocuments("cat"s)[0].id != doc_id[1]);
-}
-
-// Тест проверяет, что поисковая система исключает стоп-слова при добавлении документов
-void TestExcludeStopWordsFromAddedDocumentContent() {
-	const int doc_id = 42;
-	const string content = "cat in the city"s;
-	const vector<int> ratings = { 1, 2, 3 };
-	// Сначала убеждаемся, что поиск слова, не входящего в список стоп-слов,
-	// находит нужный документ
-	{
-		SearchServer server;
-		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
-		const auto found_docs = server.FindTopDocuments("in"s);
-		assert(found_docs.size() == 1);
-		const Document& doc0 = found_docs[0];
-		assert(doc0.id == doc_id);
-	}
-
-	// Затем убеждаемся, что поиск этого же слова, входящего в список стоп-слов,
-	// возвращает пустой результат
-	{
-		SearchServer server;
-		server.SetStopWords("in the"s);
-		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
-		assert(server.FindTopDocuments("in"s).empty());
-	}
-}
-
-//	Поддержка минус-слов. 
-//	Документы, содержащие минус-слова поискового запроса, не должны включаться в результаты поиска.
-void TestMinusWords()
-{
-	const int doc_id[] = { 0, 1 };
-	const string docs[] = { "cat with a red bow"s, "red bow fight"s };
-	const vector<int> doc_ratings[] = { { 3, 6 }, { 1, 7 } };
-
-	SearchServer server;
-	server.AddDocument(doc_id[0], docs[0], DocumentStatus::ACTUAL, doc_ratings[0]);
-	server.AddDocument(doc_id[1], docs[1], DocumentStatus::ACTUAL, doc_ratings[1]);
-
-	assert(server.FindTopDocuments("cat red"s).size() == 2);
-	assert(server.FindTopDocuments("cat red -fight"s).size() == 1);
-	assert(server.FindTopDocuments("cat -red"s).size() == 0);
-}
-
-//	Матчинг документов. При матчинге документа по поисковому запросу должны быть возвращены 
-//	все слова из поискового запроса, присутствующие в документе. 
-//	Если есть соответствие хотя бы по одному минус-слову, должен возвращаться пустой список слов.
-void TestMatch() {
-	const int doc_id[] = { 0, 1 };
-	const string docs[] = { "cat with a red bow"s, "red bow fight"s };
-	const vector<int> doc_ratings[] = { { 3, 6 }, { 1, 7 } };
-	SearchServer server;
-	server.AddDocument(doc_id[0], docs[0], DocumentStatus::ACTUAL, doc_ratings[0]);
-	server.AddDocument(doc_id[1], docs[1], DocumentStatus::ACTUAL, doc_ratings[1]);
-	auto [match, status] = server.MatchDocument("cat red bow"s, doc_id[0]);
-	assert(match.size() == 3);
-	auto [match2, status2] = server.MatchDocument("cat red -fight"s, doc_id[0]);
-	assert(match2.size() == 2);
-	auto [match3, status3] = server.MatchDocument("cat red -fight"s, doc_id[1]);
-	assert(match3.size() == 0);
-}
-
-void TestMatchWithStopWords() {
-	const int doc_id[] = { 0, 1 };
-	const string docs[] = { "cat with a red bow"s, "red bow fight"s };
-	const vector<int> doc_ratings[] = { { 3, 6 }, { 1, 7 } };
-	SearchServer server;
-	server.SetStopWords("a red bow");
-	server.AddDocument(doc_id[0], docs[0], DocumentStatus::ACTUAL, doc_ratings[0]);
-	server.AddDocument(doc_id[1], docs[1], DocumentStatus::ACTUAL, doc_ratings[1]);
-	auto [match, status] = server.MatchDocument("cat red bow"s, doc_id[0]);
-	assert(match.size() == 1);
-	auto [match2, status2] = server.MatchDocument("cat red -fight"s, doc_id[0]);
-	assert(match2.size() == 1);
-	auto [match3, status3] = server.MatchDocument("cat red -fight"s, doc_id[1]);
-	assert(match3.size() == 0);
-	auto [match4, status4] = server.MatchDocument("red bow"s, doc_id[0]);
-	assert(match4.size() == 0);
-	auto [match5, status5] = server.MatchDocument("bow fight"s, doc_id[1]);
-	assert(match5.size() == 1);
-	auto [match6, status6] = server.MatchDocument("bow -fight"s, doc_id[1]);
-	assert(match6.size() == 0);
-}
-
-//	Сортировка найденных документов по релевантности. 
-//	Возвращаемые при поиске документов результаты должны быть отсортированы в порядке убывания релевантности.
-void TestSortByRelevance() {
-	const int doc_id[] = { 0, 1, 2 };
-	const string docs[] = { "cat with a red bow"s, "bow fight"s, "red raccoon fight"s };
-	const vector<int> doc_ratings[] = { { 3, 6 }, { 1, 7 }, { 10 } };
-	SearchServer server;
-	server.AddDocument(doc_id[0], docs[0], DocumentStatus::ACTUAL, doc_ratings[0]);
-	server.AddDocument(doc_id[1], docs[1], DocumentStatus::ACTUAL, doc_ratings[1]);
-	server.AddDocument(doc_id[2], docs[2], DocumentStatus::ACTUAL, doc_ratings[2]);
-	const auto founded_docs = server.FindTopDocuments("cat fight"s);
-
-	// начиная со второго элемента: у элемента релевантность должна быть ниже чем у 
-	// преспешника, но больше чем у последующего
-	if (founded_docs.size() > 2)
-	{
-		for (size_t i = 1; i < founded_docs.size() - 1; i++)
-		{
-			assert(founded_docs[i - 1].relevance > founded_docs[i].relevance);
-			assert(founded_docs[i].relevance > founded_docs[i + 1].relevance);
-		}
-	}
-	else if (founded_docs.size() == 2)
-	{
-		// если они равны или первый больше второго
-		assert(abs(founded_docs[0].relevance - founded_docs[0].relevance) < DBL_EPSILON ||
-			founded_docs[0].relevance > founded_docs[1].relevance);
-	}
-}
-
-//	Вычисление рейтинга документов. 
-//	Рейтинг добавленного документа равен среднему арифметическому оценок документа.
-void TestRating() {
-	const int doc_id[] = { 0, 1, 2 };
-	const string docs[] = { "cat with a red bow"s, "bow fight"s, "red raccoon fight"s };
-	const vector<int> doc_ratings[] = { { 3, 6, 4, 12, 0 }, { 1, -7, 14, 5 }, { 10, -3, 6, -12 } };
-	SearchServer server;
-	server.AddDocument(doc_id[0], docs[0], DocumentStatus::ACTUAL, doc_ratings[0]);
-	server.AddDocument(doc_id[1], docs[1], DocumentStatus::ACTUAL, doc_ratings[1]);
-	server.AddDocument(doc_id[2], docs[2], DocumentStatus::ACTUAL, doc_ratings[2]);
-	const auto founded_docs = server.FindTopDocuments("cat fight"s);
-	for (size_t it = 0; it < founded_docs.size(); it++)
-	{
-		assert(founded_docs[it].rating == accumulate(doc_ratings[it].begin(), doc_ratings[it].end(), 0) / doc_ratings[it].size());
-	}
-}
-
-//	Фильтрация результатов поиска с использованием предиката, задаваемого пользователем.
-void TestPredicate() {
-	const int doc_id[] = { 0, 1, 2, 3, 4 };
-	const string docs[] = { "cat with a red bow"s, "bow fight"s, "red raccoon fight"s, "the raccoon night"s, "dog in the city"s };
-	const vector<int> doc_ratings[] = { { 3, 6, 4 }, { 1 }, { 10, -3 }, { 1, 4}, { 5, -3 } };
-	const vector<DocumentStatus> doc_status = { DocumentStatus::ACTUAL, DocumentStatus::ACTUAL,
-	DocumentStatus::BANNED , DocumentStatus::IRRELEVANT, DocumentStatus::REMOVED };
-	SearchServer server;
-	server.AddDocument(doc_id[0], docs[0], doc_status[0], doc_ratings[0]);
-	server.AddDocument(doc_id[1], docs[1], doc_status[1], doc_ratings[1]);
-	server.AddDocument(doc_id[2], docs[2], doc_status[2], doc_ratings[2]);
-	server.AddDocument(doc_id[3], docs[3], doc_status[3], doc_ratings[3]);
-	server.AddDocument(doc_id[4], docs[4], doc_status[4], doc_ratings[4]);
-
-	// подсчёт у кого из документов рейтинг больши или равен 3
-	int rating_more_than_3 = 0,
-		_id = 0,
-		val = 0;
-	for (size_t it = 0; it < doc_ratings->size(); it++)
-	{
-		for (const int i : doc_ratings[it])
-		{
-			val += i;
-		}
-		if (val >= 3)
-			rating_more_than_3++;
-		val = 0;
-	}
-
-	// подсчёт у кого из документов id елиться без остатка
-	for (const int i : doc_id)
-	{
-		if (i % 2 == 0)
-			_id++;
-	}
-
-	const string query_all_docs = "bow fight raccoon city"s;
-	assert(server.FindTopDocuments(query_all_docs).size() == 2);	// ACTUAL
-	assert(server.FindTopDocuments(query_all_docs,
-		[](int document_id, DocumentStatus status, int rating)
-		{return status == DocumentStatus::BANNED; }).size() == 1);
-	assert(server.FindTopDocuments(query_all_docs,
-		[](int document_id, DocumentStatus status, int rating)
-		{return rating >= 3; }).size() == rating_more_than_3);
-	assert(server.FindTopDocuments(query_all_docs,
-		[](int document_id, DocumentStatus status, int rating)
-		{return document_id % 2 == 0; }).size() == _id);
-}
-
-//	Поиск документов, имеющих заданный статус.
-void TestFilteringWithStatus() {
-	const int doc_id[] = { 0, 1, 2, 3, 4 };
-	const string docs[] = { "cat with a red bow"s, "bow fight"s, "red raccoon fight"s, "the raccoon night"s, "dog in the city"s };
-	const vector<int> doc_ratings[] = { { 3, 6, 4 }, { 1 }, { 10, -3 }, { 1, 4}, { 5, -3 } };
-	const vector<DocumentStatus> doc_status = { DocumentStatus::ACTUAL, DocumentStatus::ACTUAL,
-	DocumentStatus::BANNED , DocumentStatus::IRRELEVANT, DocumentStatus::REMOVED };
-	SearchServer server;
-	server.AddDocument(doc_id[0], docs[0], doc_status[0], doc_ratings[0]);
-	server.AddDocument(doc_id[1], docs[1], doc_status[1], doc_ratings[1]);
-	server.AddDocument(doc_id[2], docs[2], doc_status[2], doc_ratings[2]);
-	server.AddDocument(doc_id[3], docs[3], doc_status[3], doc_ratings[3]);
-	server.AddDocument(doc_id[4], docs[4], doc_status[4], doc_ratings[4]);
-	const string query_all_docs = "bow fight raccoon city"s;
-
-	//	сколько окументов с разными статусами
-	map<DocumentStatus, size_t> status_count_on_docs;
-	for (const DocumentStatus& status : doc_status)
-	{
-		status_count_on_docs[status]++;
-	}
-
-	assert(server.FindTopDocuments(query_all_docs, DocumentStatus::ACTUAL).size() == status_count_on_docs[DocumentStatus::ACTUAL]);
-	assert(server.FindTopDocuments(query_all_docs, DocumentStatus::BANNED).size() == status_count_on_docs[DocumentStatus::BANNED]);
-	assert(server.FindTopDocuments(query_all_docs, DocumentStatus::IRRELEVANT).size() == status_count_on_docs[DocumentStatus::IRRELEVANT]);
-	assert(server.FindTopDocuments(query_all_docs, DocumentStatus::REMOVED).size() == status_count_on_docs[DocumentStatus::REMOVED]);
-}
-
-//	Корректное вычисление релевантности найденных документов.
-void TestCorrectCalcRelevance()
-{
-	const int doc_id[] = { 0, 1, 2 };
-	const string docs[] = { "cat with a red bow"s, "bow fight"s, "red raccoon fight"s };
-	const vector<int> doc_ratings[] = { { 3, 6 }, { 1, 7 }, { 10 } };
-	SearchServer server;
-	server.AddDocument(doc_id[0], docs[0], DocumentStatus::ACTUAL, doc_ratings[0]);
-	server.AddDocument(doc_id[1], docs[1], DocumentStatus::ACTUAL, doc_ratings[1]);
-	server.AddDocument(doc_id[2], docs[2], DocumentStatus::ACTUAL, doc_ratings[2]);
-	const auto founded_docs = server.FindTopDocuments("cat fight"s);
-	double idf_cat = log(3. / 1.),
-		idf_fight = log(3. / 2.);
-	vector<double> relevance = { ((1. / 5) * idf_cat),
-		((1. / 2.) * idf_fight),
-		((1. / 3.) * idf_fight) };
-	sort(relevance.begin(), relevance.end(), [](const double val1, const double val2) {return val1 > val2; });
-
-	assert(abs(founded_docs[0].relevance - relevance[0]) < DBL_EPSILON);
-	assert(abs(founded_docs[1].relevance - relevance[1]) < DBL_EPSILON);
-	assert(abs(founded_docs[2].relevance - relevance[2]) < DBL_EPSILON);
-}
-
-// --------- Окончание модульных тестов поисковой системы -----------
-void TestSearchServer() {
-	TestExcludeStopWordsFromAddedDocumentContent();
-	TestAddDocument();
-	TestMinusWords();
-	TestMatch();
-	TestMatchWithStopWords();
-	TestSortByRelevance();
-	TestRating();
-	TestPredicate();
-	TestFilteringWithStatus();
-	TestCorrectCalcRelevance();
-}
-
-int main() {
-	TestSearchServer();
-	// Если вы видите эту строку, значит все тесты прошли успешно
-	std::cout << "Search server testing finished"s << std::endl;
-}
+//template <typename RandomIt>
+//void MergeSort(RandomIt range_begin, RandomIt range_end) {
+//    {
+//
+//        auto n = std::distance(range_begin, range_end);
+//
+//        if (1 < n)
+//        {
+//            {
+//                RandomIt l_from = range_begin;
+//                RandomIt l_to = l_from;
+//                std::advance(l_to, n / 2);
+//                MergeSort(l_from, l_to);
+//            }
+//
+//            {
+//                RandomIt r_from = range_begin;
+//                std::advance(r_from, n / 2);
+//                RandomIt r_to = r_from;
+//                std::advance(r_to, n - (n / 2));
+//                MergeSort(r_from, r_to);
+//            }
+//
+//            auto tmp_array = make_unique<typename RandomIt::value_type[]>(n);
+//            RandomIt l_iter = range_begin;
+//            RandomIt l_end = l_iter;
+//            advance(l_end, n / 2);
+//            RandomIt r_iter = l_end;
+//            RandomIt& r_end = range_end;
+//
+//            auto tmp_iter = tmp_array.get();
+//
+//            while (l_iter != l_end || r_iter != r_end)
+//            {
+//                if (*l_iter < *r_iter)
+//                {
+//                    *tmp_iter = std::move(*l_iter);
+//                    ++l_iter;
+//                    ++tmp_iter;
+//                }
+//                else
+//                {
+//                    *tmp_iter = std::move(*r_iter);
+//                    ++r_iter;
+//                    ++tmp_iter;
+//                }
+//
+//                if (l_iter == l_end)
+//                {
+//                    copy(
+//                        make_move_iterator(r_iter),
+//                        make_move_iterator(r_end),
+//                        tmp_iter
+//                    );
+//
+//                    break;
+//                }
+//
+//                if (r_iter == r_end)
+//                {
+//                    copy(
+//                        make_move_iterator(l_iter),
+//                        make_move_iterator(l_end),
+//                        tmp_iter
+//                    );
+//
+//                    break;
+//                }
+//            }
+//
+//            copy(
+//                make_move_iterator(tmp_array.get()),
+//                make_move_iterator(&tmp_array[n]),
+//                range_begin
+//            );
+//        }
+//    }
+//
+//}
